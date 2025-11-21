@@ -5,7 +5,8 @@ const copy = require('rollup-plugin-copy');
 const serve = require('rollup-plugin-serve');
 const livereload = require('rollup-plugin-livereload');
 
-const EXTENSIONS = ['.js', '.ts', '.mjs', '.json'];
+// Prefer TypeScript sources over JS to avoid accidentally pulling stale builds.
+const EXTENSIONS = ['.ts', '.js', '.mjs', '.json'];
 
 module.exports = {
   input: 'src/index.ts',
