@@ -18,7 +18,7 @@
 <body>
   <header>
     <h1>Web Probe Standalone / 独立探针页面</h1>
-    <p>Open this link on mobile to inspect browser capabilities / 在移动端访问此链接查看浏览器特性</p>
+    <p>Open on mobile or desktop to inspect browser capabilities / 在手机或电脑上打开即可查看浏览器特性</p>
   </header>
   <main>
     <div class="panel">
@@ -30,31 +30,39 @@
     </div>
     <div class="panel">
       <div class="notice">
-        Modern browsers load the ES module below. Older browsers without module support will see a fallback note.<br />
-        支持 ES Module 的现代浏览器会加载探针。更旧的浏览器若不支持模块，将显示提示信息。
+        A bundled build is loaded for broader compatibility. If the script fails, a fallback note appears.<br />
+        页面加载经过 Babel 打包的脚本以提升兼容性；若脚本失败，会显示提示信息。
       </div>
       <div id="fallback" class="fallback" hidden>
-        Your browser is too old to run the live probe. 请使用支持 ES 模块的浏览器。
+        The probe could not start. 请使用较新的浏览器或刷新页面后重试。
       </div>
     </div>
   </main>
 
-  <script type="module">
-    import { createProbe } from './src/index.js';
+  <script src="./dist/probe.iife.js"></script>
+  <script>
+    (function () {
+      var fallback = document.getElementById('fallback');
+      var mount = document.getElementById('probe-mount');
 
-    const probe = createProbe({ enableBenchmarks: true, theme: 'light' });
-    const mount = document.getElementById('probe-mount');
+      if (!window.WebProbe || typeof window.WebProbe.createProbe !== 'function') {
+        fallback.hidden = false;
+        return;
+      }
 
-    probe.run().then(() => {
-      probe.render(mount);
-    }).catch((error) => {
-      const fallback = document.getElementById('fallback');
-      fallback.hidden = false;
-      fallback.textContent = `Probe failed: ${error && error.message ? error.message : error}`;
-    });
-  </script>
-  <script nomodule>
-    document.getElementById('fallback').hidden = false;
+      try {
+        var probe = window.WebProbe.createProbe({ enableBenchmarks: true, theme: 'light' });
+        probe.run().then(function () {
+          probe.render(mount);
+        }).catch(function (error) {
+          fallback.hidden = false;
+          fallback.textContent = 'Probe failed: ' + (error && error.message ? error.message : error);
+        });
+      } catch (error) {
+        fallback.hidden = false;
+        fallback.textContent = 'Probe failed: ' + (error && error.message ? error.message : error);
+      }
+    })();
   </script>
 </body>
 </html>

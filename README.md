@@ -17,6 +17,18 @@ const result = await probe.run();
 probe.render('#probe-panel');
 ```
 
+### Legacy-friendly bundle
+
+Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe.createProbe` for browsers without module support:
+
+```html
+<script src="./dist/probe.iife.js"></script>
+<script>
+  const probe = window.WebProbe.createProbe({ enableBenchmarks: true });
+  probe.run().then(() => probe.render('#probe-panel'));
+</script>
+```
+
 ## Features
 - Hardware and API capability detection with safe fallbacks
 - Optional micro-benchmark to gauge runtime budgets

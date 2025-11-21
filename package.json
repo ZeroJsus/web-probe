@@ -4,6 +4,7 @@
   "description": "Embeddable browser capability probe for diagnostics and compatibility checks.",
   "type": "module",
   "scripts": {
+    "build": "rollup -c",
     "test": "echo 'No automated tests yet'"
   },
   "keywords": [
@@ -13,5 +14,13 @@
     "diagnostics"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.4",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "rollup": "^4.21.2"
+  }
 }
