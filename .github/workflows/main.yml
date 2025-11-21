@@ -53,7 +53,7 @@ jobs:
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} # 非必需，但推荐设置
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} # 非必需，但推荐设置
           projectName: ${{ env.CF_PROJECT_NAME }}
           directory: ${{ env.BUILD_OUTPUT_DIR }} # 使用前面定义的环境变量
           # 部署操作不应该再次执行构建命令，因为我们已经在步骤 4 中完成了。
