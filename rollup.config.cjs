@@ -31,7 +31,12 @@ module.exports = {
     }),
     copy({
       targets: [
-        { src: 'index.html', dest: 'dist' }
+        {
+          src: 'index.html',
+          dest: 'dist',
+          transform: (contents) =>
+            contents.toString().replace('./dist/probe.iife.js', './probe.iife.js')
+        }
       ]
     })
   ]
