@@ -231,6 +231,11 @@
   }
 
   function supportsCss(style, property, value) {
+    if (typeof property === 'string' && property.trim().charAt(0) === '(') {
+      var mq = safeGet(function () { return typeof matchMedia === 'function' && matchMedia(property.trim()); }, null);
+      return Boolean(mq && mq.media !== 'not all');
+    }
+
     var supportsApi = safeGet(function () { return global.CSS && typeof CSS.supports === 'function'; }, false);
     if (supportsApi) {
       if (value === undefined) return CSS.supports(property);

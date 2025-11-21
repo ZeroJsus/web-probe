@@ -25,6 +25,14 @@ const normalizeFeature = (feature) => {
 };
 
 const supportsCss = (style, property, value) => {
+  if (typeof property === 'string' && property.trim().startsWith('(')) {
+    const mq = safeGet(
+      () => typeof matchMedia === 'function' && matchMedia(property.trim()),
+      null
+    );
+    return Boolean(mq && mq.media !== 'not all');
+  }
+
   const supportsApi = safeGet(() => globalThis.CSS && typeof CSS.supports === 'function', false);
   if (supportsApi) {
     if (value === undefined) return CSS.supports(property);
