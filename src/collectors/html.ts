@@ -1,6 +1,7 @@
-import { isBrowser, safeGet } from '../runtime-utils/env.js';
+import { isBrowser, safeGet } from '../runtime-utils/env';
+import type { HtmlFeature } from '../types';
 
-const DEFAULT_HTML_FEATURES = [
+const DEFAULT_HTML_FEATURES: HtmlFeature[] = [
   {
     name: 'canvas',
     detector: () => {
@@ -43,14 +44,14 @@ const DEFAULT_HTML_FEATURES = [
   }
 ];
 
-const toPascal = (input) =>
+const toPascal = (input: string) =>
   String(input)
     .split(/[-_:]+/)
     .filter(Boolean)
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
     .join('');
 
-const normalizeFeature = (feature) => {
+const normalizeFeature = (feature?: string | HtmlFeature | null) => {
   if (!feature) return null;
   if (typeof feature === 'string') {
     const tag = feature;
@@ -58,7 +59,7 @@ const normalizeFeature = (feature) => {
       name: tag,
       detector: () => {
         const ctorName = `HTML${toPascal(tag)}Element`;
-        const ctor = safeGet(() => globalThis[ctorName], null);
+        const ctor = safeGet(() => (globalThis as Record<string, unknown>)[ctorName], null);
         if (ctor) return true;
         const el = document.createElement(tag);
         return safeGet(() => Object.prototype.toString.call(el) !== '[object HTMLUnknownElement]', false);
@@ -74,13 +75,19 @@ const normalizeFeature = (feature) => {
 
 // Collects HTML feature support (elements or APIs) with extendable detectors.
 // 采集 HTML 特性（元素或 API）支持情况，并允许外部扩展检测逻辑。
-const collectHtmlSupport = (customFeatures = []) => {
+const collectHtmlSupport = (customFeatures: Array<string | HtmlFeature> = []) => {
   if (!isBrowser()) return {};
-  const normalizedDefaults = DEFAULT_HTML_FEATURES.map(normalizeFeature).filter(Boolean);
-  const normalizedCustom = (customFeatures || []).map(normalizeFeature).filter(Boolean);
+  const normalizedDefaults = DEFAULT_HTML_FEATURES.map(normalizeFeature).filter(Boolean) as Array<{
+    name: string;
+    detector: () => unknown;
+  }>;
+  const normalizedCustom = (customFeatures || []).map(normalizeFeature).filter(Boolean) as Array<{
+    name: string;
+    detector: () => unknown;
+  }>;
   const features = [...normalizedDefaults, ...normalizedCustom];
 
-  const support = {};
+  const support: Record<string, boolean> = {};
   features.forEach((feature) => {
     support[feature.name] = Boolean(safeGet(() => feature.detector(), false));
   });

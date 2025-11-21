@@ -6,7 +6,8 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w --environment SERVE:true",
-    "test": "echo 'No automated tests yet'"
+    "test": "echo 'No automated tests yet'",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "probe",
@@ -19,12 +20,14 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.4",
+    "@babel/preset-typescript": "^7.25.4",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "rollup": "^4.21.2",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-serve": "^2.0.3"
+    "rollup-plugin-serve": "^2.0.3",
+    "typescript": "^5.5.4"
   }
 }

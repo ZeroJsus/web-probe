@@ -16,7 +16,7 @@ This document is bilingual (English / 中文) to ease collaboration.
 - **UI & Reporting / 界面与报告**: Embeddable widget + headless exporter for JSON/clipboard/download; supports minimal theming. / 可嵌入组件与无界面导出（JSON/剪贴板/下载），支持基础主题定制。
 - **Integration Hooks / 集成钩子**: Subscriptions, event emitters, and overrides so hosts can log or enrich findings. / 订阅、事件与覆写入口，便于宿主记录或扩展结论。
 - **Error Handling & Resilience / 错误与韧性**: Guarded feature detection, timeouts, and graceful degradation when APIs are blocked. / 受保护的特性检测、超时控制，在 API 受限时优雅降级。
-- **Build & Distribution / 构建与发布**: ESM/CJS/UMD bundles, tree-shaking, size budgets, and a demo playground. / 提供 ESM/CJS/UMD 产物、摇树优化、体积预算及演示页面。
+- **Build & Distribution / 构建与发布**: TypeScript-authored source with exported types, ESM/CJS/UMD bundles, tree-shaking, size budgets, and a demo playground. / 采用 TypeScript 源码并导出类型，提供 ESM/CJS/UMD 产物、摇树优化、体积预算及演示页面。
 
 ## Data Flow / 数据流
 1. **Initialize / 初始化**: Loader consumes config and registers collectors. / 入口读取配置并注册采集器。
@@ -34,6 +34,7 @@ This document is bilingual (English / 中文) to ease collaboration.
 - `ui` — embeddable widget plus headless exporters. / 可嵌入组件与无界面导出。
 - `integrations` — subscriptions, event emitters, logging hooks, host overrides. / 订阅、事件、日志钩子与宿主覆写。
 - `runtime-utils` — safe feature checks, permission prompts, timeout helpers, legacy fallbacks. / 安全特性检测、权限提示、超时助手与旧版兼容。
+- `types` — shared TypeScript definitions exported for hosts and internal modules. / 共享的 TypeScript 类型定义，供宿主与内部模块复用。
 
 ## Extensibility & Maintenance / 可扩展性与维护
 - Modular collectors and rules auto-register when added under `collectors/` or `compatibility/rules/`. / 在 `collectors/` 与 `compatibility/rules/` 下新增模块即可自动注册。

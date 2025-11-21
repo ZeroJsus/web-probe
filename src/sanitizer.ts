@@ -1,4 +1,5 @@
-import { coerceNumber } from './runtime-utils/env.js';
+import { coerceNumber } from './runtime-utils/env';
+import type { Snapshot } from './types';
 
 const roundValue = (value, precision = 2) => {
   if (value === null || value === undefined) return value;
@@ -8,8 +9,8 @@ const roundValue = (value, precision = 2) => {
 
 // Normalize numeric fields and strip sensitive benchmark details before sharing.
 // 规范化数值字段，并在共享前去除可能敏感的基准细节。
-const sanitizeSnapshot = (snapshot) => {
-  const sanitized = { ...snapshot };
+const sanitizeSnapshot = (snapshot: Snapshot): Snapshot => {
+  const sanitized: Snapshot = { ...snapshot };
 
   if (sanitized.hardware) {
     sanitized.hardware = {

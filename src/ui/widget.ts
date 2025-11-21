@@ -1,10 +1,11 @@
-import { isBrowser, safeGet } from '../runtime-utils/env.js';
+import { isBrowser, safeGet } from '../runtime-utils/env';
+import type { ProbeResult, RenderOptions } from '../types';
 
-const displayValue = (value, fallback = 'n/a') => {
+const displayValue = (value: unknown, fallback = 'n/a') => {
   return value === null || value === undefined ? fallback : value;
 };
 
-const buildList = (items) => {
+const buildList = (items: string[]) => {
   const list = document.createElement('ul');
   list.style.margin = '0';
   list.style.paddingLeft = '16px';
@@ -17,7 +18,7 @@ const buildList = (items) => {
   return list;
 };
 
-const resolveMount = (mount) => {
+const resolveMount = (mount?: RenderOptions['mount']) => {
   if (!mount) return null;
   if (typeof mount === 'string') return document.querySelector(mount);
   return mount;
@@ -25,7 +26,10 @@ const resolveMount = (mount) => {
 
 // Render a self-contained summary widget for quick inspection inside host pages.
 // 渲染可嵌入的摘要组件，便于在宿主页面内快速查看。
-const renderWidget = (result, options = {}) => {
+const renderWidget = (
+  result: ProbeResult,
+  options: RenderOptions = {}
+): HTMLElement | null => {
   if (!isBrowser()) return null;
   const mountNode = resolveMount(options.mount || document.body);
   if (!mountNode) return null;
@@ -47,10 +51,7 @@ const renderWidget = (result, options = {}) => {
   title.style.fontSize = '16px';
   container.appendChild(title);
 
-  const hardware = result.snapshot?.hardware || {};
-  const apiSupport = result.snapshot?.apiSupport || {};
-  const htmlSupport = result.snapshot?.htmlSupport || {};
-  const cssSupport = result.snapshot?.cssSupport || {};
+  const { hardware, apiSupport, htmlSupport, cssSupport } = result.snapshot;
 
   const hardwareBlock = document.createElement('div');
   hardwareBlock.style.marginBottom = '8px';

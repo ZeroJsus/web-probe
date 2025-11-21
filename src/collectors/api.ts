@@ -1,6 +1,7 @@
-import { isBrowser, safeGet } from '../runtime-utils/env.js';
+import { isBrowser, safeGet } from '../runtime-utils/env';
+import type { ApiFeature } from '../types';
 
-const DEFAULT_APIS = [
+const DEFAULT_APIS: string[] = [
   'fetch',
   'Promise',
   'IntersectionObserver',
@@ -11,15 +12,15 @@ const DEFAULT_APIS = [
   'PaymentRequest'
 ];
 
-const normalizeApi = (api) => {
+const normalizeApi = (api?: string | ApiFeature | null) => {
   if (!api) return null;
   if (typeof api === 'string') {
-    return { name: api, detector: () => safeGet(() => globalThis[api], false) };
+    return { name: api, detector: () => safeGet(() => (globalThis as Record<string, unknown>)[api], false) };
   }
   if (typeof api === 'object' && api.name) {
     const detector = typeof api.detector === 'function'
       ? api.detector
-      : () => safeGet(() => globalThis[api.name], false);
+      : () => safeGet(() => (globalThis as Record<string, unknown>)[api.name], false);
     return { name: api.name, detector };
   }
   return null;
@@ -27,11 +28,17 @@ const normalizeApi = (api) => {
 
 // Detects whether core and custom APIs exist on the current global scope.
 // 检测核心与自定义 API 是否存在于当前全局对象。
-const collectApiSupport = (customApis = []) => {
+const collectApiSupport = (customApis: Array<string | ApiFeature> = []) => {
   if (!isBrowser()) return {};
 
-  const defaults = DEFAULT_APIS.map((api) => ({ name: api, detector: () => safeGet(() => globalThis[api], false) }));
-  const normalizedCustom = (customApis || []).map(normalizeApi).filter(Boolean);
+  const defaults = DEFAULT_APIS.map((api) => ({
+    name: api,
+    detector: () => safeGet(() => (globalThis as Record<string, unknown>)[api], false)
+  }));
+  const normalizedCustom = (customApis || []).map(normalizeApi).filter(Boolean) as Array<{
+    name: string;
+    detector: () => unknown;
+  }>;
 
   const seen = new Set();
   const candidates = [...defaults, ...normalizedCustom].filter((entry) => {
@@ -40,7 +47,7 @@ const collectApiSupport = (customApis = []) => {
     return true;
   });
 
-  const support = {};
+  const support: Record<string, boolean> = {};
 
   candidates.forEach((entry) => {
     support[entry.name] = Boolean(safeGet(() => entry.detector(), false));

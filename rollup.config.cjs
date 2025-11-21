@@ -5,8 +5,10 @@ const copy = require('rollup-plugin-copy');
 const serve = require('rollup-plugin-serve');
 const livereload = require('rollup-plugin-livereload');
 
+const EXTENSIONS = ['.js', '.ts', '.mjs', '.json'];
+
 module.exports = {
-  input: 'src/index.js',
+  input: 'src/index.ts',
   output: {
     file: 'dist/probe.iife.js',
     format: 'iife',
@@ -14,7 +16,7 @@ module.exports = {
     sourcemap: true
   },
   plugins: [
-    nodeResolve(),
+    nodeResolve({ extensions: EXTENSIONS }),
     commonjs(),
     babel({
       babelHelpers: 'bundled',
@@ -26,9 +28,15 @@ module.exports = {
             bugfixes: true,
             modules: false
           }
+        ],
+        [
+          '@babel/preset-typescript',
+          {
+            allowDeclareFields: true
+          }
         ]
       ],
-      extensions: ['.js'],
+      extensions: EXTENSIONS,
       comments: false
     }),
     copy({

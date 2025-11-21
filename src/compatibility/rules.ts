@@ -1,6 +1,18 @@
+import type { Snapshot, Severity } from '../types';
+
+interface Rule {
+  id: string;
+  severity: Severity;
+  message: {
+    en: string;
+    zh: string;
+  };
+  check: (snapshot: Snapshot) => boolean;
+}
+
 const RULE_VERSION = '1.1.0';
 
-const rules = [
+const rules: Rule[] = [
   {
     id: 'missing-fetch',
     severity: 'error',

@@ -1,6 +1,7 @@
-import { isBrowser, safeGet } from '../runtime-utils/env.js';
+import { isBrowser, safeGet } from '../runtime-utils/env';
+import type { CssFeature } from '../types';
 
-const DEFAULT_CSS_FEATURES = [
+const DEFAULT_CSS_FEATURES: CssFeature[] = [
   { name: 'css-grid', property: 'display', value: 'grid' },
   { name: 'css-flex', property: 'display', value: 'flex' },
   { name: 'backdrop-filter', property: 'backdrop-filter', value: 'blur(2px)' },
@@ -9,7 +10,7 @@ const DEFAULT_CSS_FEATURES = [
   { name: 'prefers-reduced-motion', property: '(prefers-reduced-motion: reduce)' }
 ];
 
-const normalizeFeature = (feature) => {
+const normalizeFeature = (feature?: string | CssFeature | null) => {
   if (!feature) return null;
   if (typeof feature === 'string') {
     return { name: feature, property: feature };
@@ -24,7 +25,11 @@ const normalizeFeature = (feature) => {
   return null;
 };
 
-const supportsCss = (style, property, value) => {
+const supportsCss = (
+  style: CSSStyleDeclaration | null,
+  property?: string,
+  value?: string
+): boolean => {
   if (typeof property === 'string' && property.trim().startsWith('(')) {
     const mq = safeGet(
       () => typeof matchMedia === 'function' && matchMedia(property.trim()),
@@ -40,29 +45,40 @@ const supportsCss = (style, property, value) => {
   }
 
   if (!style) return false;
-  if (value === undefined) return property in style;
+  if (value === undefined) return property ? property in style : false;
 
-  const previous = style[property];
+  if (!property) return false;
+
+  const styleRecord = style as Record<string, unknown>;
+  const previous = styleRecord[property];
   try {
-    style[property] = value;
-    return style[property] === value;
+    styleRecord[property] = value;
+    return styleRecord[property] === value;
   } catch (err) {
     return false;
   } finally {
-    style[property] = previous;
+    styleRecord[property] = previous;
   }
 };
 
 // Collects CSS feature support with optional custom checks.
 // 采集 CSS 特性支持情况，并允许外部自定义检测项。
-const collectCssSupport = (customFeatures = []) => {
+const collectCssSupport = (customFeatures: Array<string | CssFeature> = []) => {
   if (!isBrowser()) return {};
   const style = safeGet(() => document.documentElement && document.documentElement.style, null);
-  const normalizedDefaults = DEFAULT_CSS_FEATURES.map(normalizeFeature).filter(Boolean);
-  const normalizedCustom = (customFeatures || []).map(normalizeFeature).filter(Boolean);
+  const normalizedDefaults = DEFAULT_CSS_FEATURES.map(normalizeFeature).filter(Boolean) as Array<{
+    name: string;
+    property?: string;
+    value?: string;
+  }>;
+  const normalizedCustom = (customFeatures || []).map(normalizeFeature).filter(Boolean) as Array<{
+    name: string;
+    property?: string;
+    value?: string;
+  }>;
   const features = [...normalizedDefaults, ...normalizedCustom];
 
-  const support = {};
+  const support: Record<string, boolean> = {};
   features.forEach((feature) => {
     support[feature.name] = Boolean(supportsCss(style, feature.property, feature.value));
   });

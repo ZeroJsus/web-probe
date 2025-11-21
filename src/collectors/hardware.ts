@@ -1,8 +1,9 @@
-import { isBrowser, safeGet, coerceNumber } from '../runtime-utils/env.js';
+import { isBrowser, safeGet, coerceNumber } from '../runtime-utils/env';
+import type { HardwareSnapshot } from '../types';
 
 // Collects hardware-adjacent navigator hints (memory, cores, UA, locale, platform).
 // 采集与硬件相关的 navigator 信息（内存、核心数、UA、语言、平台）。
-const collectHardware = () => {
+const collectHardware = (): HardwareSnapshot => {
   if (!isBrowser()) {
     return {
       deviceMemory: null,
