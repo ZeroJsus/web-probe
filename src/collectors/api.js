@@ -11,15 +11,39 @@ const DEFAULT_APIS = [
   'PaymentRequest'
 ];
 
+const normalizeApi = (api) => {
+  if (!api) return null;
+  if (typeof api === 'string') {
+    return { name: api, detector: () => safeGet(() => globalThis[api], false) };
+  }
+  if (typeof api === 'object' && api.name) {
+    const detector = typeof api.detector === 'function'
+      ? api.detector
+      : () => safeGet(() => globalThis[api.name], false);
+    return { name: api.name, detector };
+  }
+  return null;
+};
+
 // Detects whether core and custom APIs exist on the current global scope.
 // 检测核心与自定义 API 是否存在于当前全局对象。
 const collectApiSupport = (customApis = []) => {
   if (!isBrowser()) return {};
-  const candidates = [...new Set([...DEFAULT_APIS, ...customApis])];
+
+  const defaults = DEFAULT_APIS.map((api) => ({ name: api, detector: () => safeGet(() => globalThis[api], false) }));
+  const normalizedCustom = (customApis || []).map(normalizeApi).filter(Boolean);
+
+  const seen = new Set();
+  const candidates = [...defaults, ...normalizedCustom].filter((entry) => {
+    if (seen.has(entry.name)) return false;
+    seen.add(entry.name);
+    return true;
+  });
+
   const support = {};
 
-  candidates.forEach((apiName) => {
-    support[apiName] = Boolean(safeGet(() => globalThis[apiName], false));
+  candidates.forEach((entry) => {
+    support[entry.name] = Boolean(safeGet(() => entry.detector(), false));
   });
 
   support['ServiceWorker'] = Boolean(

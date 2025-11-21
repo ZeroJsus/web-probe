@@ -1,5 +1,7 @@
 import { collectHardware } from './collectors/hardware.js';
 import { collectApiSupport } from './collectors/api.js';
+import { collectHtmlSupport } from './collectors/html.js';
+import { collectCssSupport } from './collectors/css.js';
 import { runMicroBenchmarks } from './benchmarks/micro.js';
 import { sanitizeSnapshot } from './sanitizer.js';
 import { evaluateCompatibility } from './compatibility/index.js';
@@ -10,6 +12,8 @@ import { isBrowser } from './runtime-utils/env.js';
 const DEFAULT_CONFIG = {
   enableBenchmarks: false,
   customApis: [],
+  customHtmlFeatures: [],
+  customCssFeatures: [],
   benchmarkOptions: {},
   ruleOverrides: {},
   theme: 'light'
@@ -27,13 +31,21 @@ const createProbe = (userConfig = {}) => {
   const collect = () => {
     const hardware = collectHardware();
     const apiSupport = collectApiSupport(config.customApis);
+    const htmlSupport = collectHtmlSupport(config.customHtmlFeatures);
+    const cssSupport = collectCssSupport(config.customCssFeatures);
 
     const benchmarksPromise = config.enableBenchmarks
       ? runMicroBenchmarks(config.benchmarkOptions)
       : Promise.resolve(undefined);
 
     return Promise.resolve(benchmarksPromise).then((benchmarks) => {
-      const snapshot = sanitizeSnapshot({ hardware, apiSupport, benchmarks });
+      const snapshot = sanitizeSnapshot({
+        hardware,
+        apiSupport,
+        htmlSupport,
+        cssSupport,
+        benchmarks
+      });
       bus.emit('snapshot', snapshot);
 
       const report = evaluateCompatibility(snapshot, config.ruleOverrides);

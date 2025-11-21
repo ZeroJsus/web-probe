@@ -7,6 +7,7 @@
   }
 
   function safeGet(getter, fallback) {
+    if (fallback === undefined) fallback = undefined;
     try {
       var value = getter();
       return value === undefined ? fallback : value;
@@ -16,6 +17,7 @@
   }
 
   function coerceNumber(value, fallback) {
+    if (fallback === undefined) fallback = 0;
     if (value === null || value === undefined) return fallback;
     var coerced = Number(value);
     return isFinite(coerced) ? coerced : fallback;
@@ -76,22 +78,39 @@
     'PaymentRequest'
   ];
 
+  function normalizeApi(api) {
+    if (!api) return null;
+    if (typeof api === 'string') {
+      return { name: api, detector: function () { return safeGet(function () { return global[api]; }, false); } };
+    }
+    if (typeof api === 'object' && api.name) {
+      var detector = typeof api.detector === 'function'
+        ? api.detector
+        : function () { return safeGet(function () { return global[api.name]; }, false); };
+      return { name: api.name, detector: detector };
+    }
+    return null;
+  }
+
   function collectApiSupport(customApis) {
     if (customApis === void 0) customApis = [];
     if (!isBrowser()) return {};
 
+    var defaults = DEFAULT_APIS.map(function (api) {
+      return { name: api, detector: function () { return safeGet(function () { return global[api]; }, false); } };
+    });
+    var normalizedCustom = (customApis || []).map(normalizeApi).filter(Boolean);
+
     var seen = {};
-    var candidates = [];
-    DEFAULT_APIS.concat(customApis || []).forEach(function (name) {
-      if (!seen[name]) {
-        seen[name] = true;
-        candidates.push(name);
-      }
+    var candidates = defaults.concat(normalizedCustom).filter(function (entry) {
+      if (seen[entry.name]) return false;
+      seen[entry.name] = true;
+      return true;
     });
 
     var support = {};
-    candidates.forEach(function (apiName) {
-      support[apiName] = Boolean(safeGet(function () { return global[apiName]; }, false));
+    candidates.forEach(function (entry) {
+      support[entry.name] = Boolean(safeGet(function () { return entry.detector(); }, false));
     });
 
     support['ServiceWorker'] = Boolean(
@@ -99,6 +118,151 @@
     );
 
     support['Permissions'] = Boolean(safeGet(function () { return navigator.permissions; }, false));
+
+    return support;
+  }
+
+  var DEFAULT_HTML_FEATURES = [
+    {
+      name: 'canvas',
+      detector: function () {
+        var el = document.createElement('canvas');
+        return Boolean(el && typeof el.getContext === 'function');
+      }
+    },
+    {
+      name: 'video',
+      detector: function () {
+        var el = document.createElement('video');
+        return Boolean(el && typeof el.canPlayType === 'function');
+      }
+    },
+    {
+      name: 'template',
+      detector: function () {
+        var el = document.createElement('template');
+        return 'content' in el;
+      }
+    },
+    {
+      name: 'dialog',
+      detector: function () {
+        var el = document.createElement('dialog');
+        return typeof el.showModal === 'function';
+      }
+    },
+    {
+      name: 'picture',
+      detector: function () { return Boolean(safeGet(function () { return global.HTMLPictureElement; }, null)); }
+    },
+    {
+      name: 'slot',
+      detector: function () { return Boolean(safeGet(function () { return global.HTMLSlotElement; }, null)); }
+    },
+    {
+      name: 'custom-elements',
+      detector: function () { return Boolean(safeGet(function () { return window.customElements && window.customElements.define; }, false)); }
+    }
+  ];
+
+  function toPascal(input) {
+    return String(input)
+      .split(/[-_:]+/)
+      .filter(Boolean)
+      .map(function (chunk) { return chunk.charAt(0).toUpperCase() + chunk.slice(1); })
+      .join('');
+  }
+
+  function normalizeHtmlFeature(feature) {
+    if (!feature) return null;
+    if (typeof feature === 'string') {
+      var tag = feature;
+      return {
+        name: tag,
+        detector: function () {
+          var ctorName = 'HTML' + toPascal(tag) + 'Element';
+          var ctor = safeGet(function () { return global[ctorName]; }, null);
+          if (ctor) return true;
+          var el = document.createElement(tag);
+          return safeGet(function () { return Object.prototype.toString.call(el) !== '[object HTMLUnknownElement]'; }, false);
+        }
+      };
+    }
+    if (typeof feature === 'object' && feature.name) {
+      var detector = typeof feature.detector === 'function' ? feature.detector : function () { return false; };
+      return { name: feature.name, detector: detector };
+    }
+    return null;
+  }
+
+  function collectHtmlSupport(customFeatures) {
+    if (customFeatures === void 0) customFeatures = [];
+    if (!isBrowser()) return {};
+    var normalizedDefaults = DEFAULT_HTML_FEATURES.map(normalizeHtmlFeature).filter(Boolean);
+    var normalizedCustom = (customFeatures || []).map(normalizeHtmlFeature).filter(Boolean);
+    var features = normalizedDefaults.concat(normalizedCustom);
+
+    var support = {};
+    features.forEach(function (feature) {
+      support[feature.name] = Boolean(safeGet(function () { return feature.detector(); }, false));
+    });
+
+    return support;
+  }
+
+  var DEFAULT_CSS_FEATURES = [
+    { name: 'css-grid', property: 'display', value: 'grid' },
+    { name: 'css-flex', property: 'display', value: 'flex' },
+    { name: 'backdrop-filter', property: 'backdrop-filter', value: 'blur(2px)' },
+    { name: 'position-sticky', property: 'position', value: 'sticky' },
+    { name: 'container-queries', property: 'container-type', value: 'inline-size' },
+    { name: 'prefers-reduced-motion', property: '(prefers-reduced-motion: reduce)' }
+  ];
+
+  function normalizeCssFeature(feature) {
+    if (!feature) return null;
+    if (typeof feature === 'string') {
+      return { name: feature, property: feature };
+    }
+    if (typeof feature === 'object' && feature.name) {
+      return { name: feature.name, property: feature.property || feature.name, value: feature.value };
+    }
+    return null;
+  }
+
+  function supportsCss(style, property, value) {
+    var supportsApi = safeGet(function () { return global.CSS && typeof CSS.supports === 'function'; }, false);
+    if (supportsApi) {
+      if (value === undefined) return CSS.supports(property);
+      return CSS.supports(property, value);
+    }
+
+    if (!style) return false;
+    if (value === undefined) return property in style;
+
+    var previous = style[property];
+    try {
+      style[property] = value;
+      return style[property] === value;
+    } catch (err) {
+      return false;
+    } finally {
+      style[property] = previous;
+    }
+  }
+
+  function collectCssSupport(customFeatures) {
+    if (customFeatures === void 0) customFeatures = [];
+    if (!isBrowser()) return {};
+    var style = safeGet(function () { return document.documentElement && document.documentElement.style; }, null);
+    var normalizedDefaults = DEFAULT_CSS_FEATURES.map(normalizeCssFeature).filter(Boolean);
+    var normalizedCustom = (customFeatures || []).map(normalizeCssFeature).filter(Boolean);
+    var features = normalizedDefaults.concat(normalizedCustom);
+
+    var support = {};
+    features.forEach(function (feature) {
+      support[feature.name] = Boolean(supportsCss(style, feature.property, feature.value));
+    });
 
     return support;
   }
@@ -138,21 +302,13 @@
   }
 
   function sanitizeSnapshot(snapshot) {
-    var sanitized = {};
-    for (var key in snapshot) {
-      if (Object.prototype.hasOwnProperty.call(snapshot, key)) {
-        sanitized[key] = snapshot[key];
-      }
-    }
+    var sanitized = Object.assign({}, snapshot);
 
     if (sanitized.hardware) {
-      sanitized.hardware = {
+      sanitized.hardware = Object.assign({}, sanitized.hardware, {
         deviceMemory: roundValue(coerceNumber(sanitized.hardware.deviceMemory, null), 1),
-        hardwareConcurrency: coerceNumber(sanitized.hardware.hardwareConcurrency, null),
-        userAgent: sanitized.hardware.userAgent,
-        language: sanitized.hardware.language,
-        platform: sanitized.hardware.platform
-      };
+        hardwareConcurrency: coerceNumber(sanitized.hardware.hardwareConcurrency, null)
+      });
     }
 
     if (sanitized.benchmarks && sanitized.benchmarks.micro) {
@@ -167,7 +323,8 @@
   }
 
   // Compatibility ------------------------------------------------------
-  var RULE_VERSION = '1.0.0';
+  var RULE_VERSION = '1.1.0';
+
   var rules = [
     {
       id: 'missing-fetch',
@@ -185,9 +342,7 @@
         en: 'Low reported device memory; consider lightweight assets.',
         zh: '设备可用内存较低，建议使用轻量资源。'
       },
-      check: function (snapshot) {
-        return snapshot.hardware && snapshot.hardware.deviceMemory !== null && snapshot.hardware.deviceMemory < 1.5;
-      }
+      check: function (snapshot) { return snapshot.hardware && snapshot.hardware.deviceMemory !== null && snapshot.hardware.deviceMemory < 1.5; }
     },
     {
       id: 'no-service-worker',
@@ -197,26 +352,40 @@
         zh: '不支持 Service Worker，离线缓存无法使用。'
       },
       check: function (snapshot) { return snapshot.apiSupport && snapshot.apiSupport.ServiceWorker === false; }
+    },
+    {
+      id: 'missing-html-template',
+      severity: 'warn',
+      message: {
+        en: 'HTML template element is missing; client-side rendering may break.',
+        zh: '缺少 HTML template 元素，前端模板渲染可能异常。'
+      },
+      check: function (snapshot) { return snapshot.htmlSupport && snapshot.htmlSupport.template === false; }
+    },
+    {
+      id: 'missing-css-grid',
+      severity: 'warn',
+      message: {
+        en: 'CSS Grid not supported; layouts may fall back.',
+        zh: '不支持 CSS Grid，页面布局可能退化。'
+      },
+      check: function (snapshot) { return snapshot.cssSupport && snapshot.cssSupport['css-grid'] === false; }
     }
   ];
 
   function evaluateCompatibility(snapshot, overrides) {
     if (overrides === void 0) overrides = {};
-    var findings = [];
-
-    for (var i = 0; i < rules.length; i += 1) {
-      var rule = rules[i];
-      if (overrides[rule.id] === false) continue;
-      var triggered = Boolean(rule.check(snapshot));
-      if (triggered) {
-        findings.push({
+    var findings = rules
+      .filter(function (rule) { return overrides[rule.id] !== false; })
+      .map(function (rule) {
+        return {
           id: rule.id,
           severity: rule.severity,
-          triggered: true,
+          triggered: Boolean(rule.check(snapshot)),
           message: rule.message
-        });
-      }
-    }
+        };
+      })
+      .filter(function (finding) { return finding.triggered; });
 
     return { findings: findings, ruleVersion: RULE_VERSION };
   }
@@ -228,21 +397,20 @@
     var on = function (event, handler) {
       var existing = listeners.get(event) || [];
       listeners.set(event, existing.concat([handler]));
-      return function () { off(event, handler); };
+      return function () { return off(event, handler); };
     };
 
     var off = function (event, handler) {
       var existing = listeners.get(event) || [];
-      var next = [];
-      for (var i = 0; i < existing.length; i += 1) {
-        if (existing[i] !== handler) next.push(existing[i]);
-      }
-      listeners.set(event, next);
+      listeners.set(
+        event,
+        existing.filter(function (fn) { return fn !== handler; })
+      );
     };
 
     var emit = function (event, payload) {
       var handlers = listeners.get(event) || [];
-      handlers.forEach(function (fn) { fn(payload); });
+      handlers.forEach(function (fn) { return fn(payload); });
     };
 
     return { on: on, off: off, emit: emit };
@@ -298,6 +466,8 @@
 
     var hardware = (result.snapshot && result.snapshot.hardware) || {};
     var apiSupport = (result.snapshot && result.snapshot.apiSupport) || {};
+    var htmlSupport = (result.snapshot && result.snapshot.htmlSupport) || {};
+    var cssSupport = (result.snapshot && result.snapshot.cssSupport) || {};
 
     var hardwareBlock = document.createElement('div');
     hardwareBlock.style.marginBottom = '8px';
@@ -319,11 +489,31 @@
     var apiTitle = document.createElement('strong');
     apiTitle.textContent = 'APIs';
     apiBlock.appendChild(apiTitle);
-    var apiLines = Object.keys(apiSupport).slice(0, 6).map(function (key) {
-      return key + ': ' + apiSupport[key];
-    });
+    var apiLines = Object.keys(apiSupport).slice(0, 6).map(function (key) { return key + ': ' + apiSupport[key]; });
     apiBlock.appendChild(buildList(apiLines));
     container.appendChild(apiBlock);
+
+    var htmlBlock = document.createElement('div');
+    htmlBlock.style.marginBottom = '8px';
+    var htmlTitle = document.createElement('strong');
+    htmlTitle.textContent = 'HTML';
+    htmlBlock.appendChild(htmlTitle);
+    var htmlLines = Object.keys(htmlSupport)
+      .slice(0, 6)
+      .map(function (key) { return key + ': ' + htmlSupport[key]; });
+    htmlBlock.appendChild(buildList(htmlLines));
+    container.appendChild(htmlBlock);
+
+    var cssBlock = document.createElement('div');
+    cssBlock.style.marginBottom = '8px';
+    var cssTitle = document.createElement('strong');
+    cssTitle.textContent = 'CSS';
+    cssBlock.appendChild(cssTitle);
+    var cssLines = Object.keys(cssSupport)
+      .slice(0, 6)
+      .map(function (key) { return key + ': ' + cssSupport[key]; });
+    cssBlock.appendChild(buildList(cssLines));
+    container.appendChild(cssBlock);
 
     var findings = (result.report && result.report.findings) || [];
     var findingsBlock = document.createElement('div');
@@ -355,6 +545,8 @@
   var DEFAULT_CONFIG = {
     enableBenchmarks: false,
     customApis: [],
+    customHtmlFeatures: [],
+    customCssFeatures: [],
     benchmarkOptions: {},
     ruleOverrides: {},
     theme: 'light'
@@ -369,13 +561,21 @@
     var collect = function () {
       var hardware = collectHardware();
       var apiSupport = collectApiSupport(config.customApis);
+      var htmlSupport = collectHtmlSupport(config.customHtmlFeatures);
+      var cssSupport = collectCssSupport(config.customCssFeatures);
 
       var benchmarksPromise = config.enableBenchmarks
         ? runMicroBenchmarks(config.benchmarkOptions)
         : Promise.resolve(undefined);
 
       return Promise.resolve(benchmarksPromise).then(function (benchmarks) {
-        var snapshot = sanitizeSnapshot({ hardware: hardware, apiSupport: apiSupport, benchmarks: benchmarks });
+        var snapshot = sanitizeSnapshot({
+          hardware: hardware,
+          apiSupport: apiSupport,
+          htmlSupport: htmlSupport,
+          cssSupport: cssSupport,
+          benchmarks: benchmarks
+        });
         bus.emit('snapshot', snapshot);
 
         var report = evaluateCompatibility(snapshot, config.ruleOverrides);
@@ -401,4 +601,4 @@
   }
 
   global.WebProbe = { createProbe: createProbe };
-})(typeof window !== 'undefined' ? window : this);
+})(typeof window !== 'undefined' ? window : globalThis);

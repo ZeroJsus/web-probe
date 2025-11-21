@@ -10,11 +10,27 @@ import { createProbe } from './src/index.js';
 const probe = createProbe({
   enableBenchmarks: true,
   customApis: ['Notification'],
+  customHtmlFeatures: ['dialog'],
+  customCssFeatures: [{ name: 'accent-color', property: 'accent-color' }],
   theme: 'light'
 });
 
 const result = await probe.run();
 probe.render('#probe-panel');
+```
+
+Extend detection with custom feature checks:
+
+```js
+const probe = createProbe({
+  customApis: ['Notification', () => Boolean(window.webkitNotifications)],
+  customHtmlFeatures: [
+    { name: 'portal', detector: () => 'HTMLPortalElement' in window }
+  ],
+  customCssFeatures: [
+    { name: 'has-selector', property: 'selector(:has(*))' }
+  ]
+});
 ```
 
 ### Legacy-friendly bundle
@@ -30,7 +46,7 @@ Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe
 ```
 
 ## Features
-- Hardware and API capability detection with safe fallbacks
+- Hardware, HTML/CSS, and API capability detection with safe fallbacks
 - Optional micro-benchmark to gauge runtime budgets
 - Privacy-aware sanitization (coarsened numbers, no unique IDs)
 - Compatibility engine with bilingual messages and rule overrides
@@ -38,7 +54,7 @@ Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe
 
 ## Module map
 - `src/loader.js`: bootstrap and orchestrates collection + reporting
-- `src/collectors/`: capability collectors (hardware, API surface)
+- `src/collectors/`: capability collectors (hardware, HTML, CSS, API surface)
 - `src/benchmarks/`: opt-in micro benchmarks
 - `src/sanitizer.js`: normalization and redaction
 - `src/compatibility/`: rules engine and definitions

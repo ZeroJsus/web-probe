@@ -9,7 +9,7 @@ This document is bilingual (English / 中文) to ease collaboration.
 
 ## High-Level Architecture / 高层架构
 - **Loader & Bootstrap / 加载与启动**: Minimal entry that reads config, mounts an isolated container, and lazy-loads heavy collectors. / 精简入口，读取配置、挂载隔离容器，并懒加载重型采集器。
-- **Capability Collectors / 能力采集器**: Focused modules capturing runtime profile (hardware, UA hints, API availability) and permission-gated signals. / 聚焦模块，采集运行时画像（硬件、UA hints、API 可用性）及需权限的信号。
+- **Capability Collectors / 能力采集器**: Focused modules capturing runtime profile (hardware, HTML/CSS support, API availability) and permission-gated signals. / 聚焦模块，采集运行时画像（硬件、HTML/CSS 支持、API 可用性）及需权限的信号。
 - **Measurement & Benchmarking / 性能测量**: Optional micro-benchmarks for budget estimation (layout, canvas, JS ops) with throttling to avoid fingerprinting. / 可选微基准（布局、画布、JS 操作）评估性能预算，并做节流以降低指纹风险。
 - **Normalization & Privacy Guardrails / 规范化与隐私护栏**: Sanitizes data (rounding, redaction) to remove PII and cap precision before exposure. / 在对外提供前进行取整、脱敏，移除 PII、限制精度。
 - **Compatibility Engine / 兼容性引擎**: Compares capabilities with ruleset to emit severity-tagged findings and fallback suggestions. / 将能力与规则集对比，输出按严重级别分类的结论及回退方案。
@@ -27,7 +27,7 @@ This document is bilingual (English / 中文) to ease collaboration.
 
 ## Module Responsibilities / 模块职责
 - `loader` — bootstrap, config parsing, host-safe mounting, lazy collector loading. / 启动、配置解析、安全挂载、懒加载采集器。
-- `collectors/*` — domain-specific capability detection with consistent schema and privacy-aware formatting. / 各领域能力检测，统一结构与隐私格式。
+- `collectors/*` — domain-specific capability detection with consistent schema and privacy-aware formatting (hardware, HTML, CSS, JS APIs). / 各领域能力检测（硬件、HTML、CSS、JS API），统一结构与隐私格式。
 - `benchmarks/*` — opt-in micro-benchmarks with guardrails and pluggable cases. / 可选微基准，含护栏与可插拔用例。
 - `sanitizer` — normalizes and redacts data before exposure. / 对外前的规范化与脱敏。
 - `compatibility` — rules engine, severity tagging, fallback suggestions. / 规则引擎、严重度标注、回退建议。

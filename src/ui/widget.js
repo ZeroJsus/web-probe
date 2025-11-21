@@ -49,6 +49,8 @@ const renderWidget = (result, options = {}) => {
 
   const hardware = result.snapshot?.hardware || {};
   const apiSupport = result.snapshot?.apiSupport || {};
+  const htmlSupport = result.snapshot?.htmlSupport || {};
+  const cssSupport = result.snapshot?.cssSupport || {};
 
   const hardwareBlock = document.createElement('div');
   hardwareBlock.style.marginBottom = '8px';
@@ -73,6 +75,28 @@ const renderWidget = (result, options = {}) => {
   const apiLines = Object.keys(apiSupport).slice(0, 6).map((key) => `${key}: ${apiSupport[key]}`);
   apiBlock.appendChild(buildList(apiLines));
   container.appendChild(apiBlock);
+
+  const htmlBlock = document.createElement('div');
+  htmlBlock.style.marginBottom = '8px';
+  const htmlTitle = document.createElement('strong');
+  htmlTitle.textContent = 'HTML';
+  htmlBlock.appendChild(htmlTitle);
+  const htmlLines = Object.keys(htmlSupport)
+    .slice(0, 6)
+    .map((key) => `${key}: ${htmlSupport[key]}`);
+  htmlBlock.appendChild(buildList(htmlLines));
+  container.appendChild(htmlBlock);
+
+  const cssBlock = document.createElement('div');
+  cssBlock.style.marginBottom = '8px';
+  const cssTitle = document.createElement('strong');
+  cssTitle.textContent = 'CSS';
+  cssBlock.appendChild(cssTitle);
+  const cssLines = Object.keys(cssSupport)
+    .slice(0, 6)
+    .map((key) => `${key}: ${cssSupport[key]}`);
+  cssBlock.appendChild(buildList(cssLines));
+  container.appendChild(cssBlock);
 
   const findings = result.report?.findings || [];
   const findingsBlock = document.createElement('div');
