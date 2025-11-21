@@ -1,6 +1,7 @@
 const { nodeResolve } = require('@rollup/plugin-node-resolve');
 const commonjs = require('@rollup/plugin-commonjs');
 const { babel } = require('@rollup/plugin-babel');
+const copy = require('rollup-plugin-copy');
 
 module.exports = {
   input: 'src/index.js',
@@ -27,6 +28,11 @@ module.exports = {
       ],
       extensions: ['.js'],
       comments: false
+    }),
+    copy({
+      targets: [
+        { src: 'index.html', dest: 'dist' }
+      ]
     })
   ]
 };
