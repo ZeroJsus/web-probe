@@ -1,11 +1,11 @@
 # Web Probe
 
-Lightweight, embeddable diagnostics that reveal browser hardware hints, API availability, and compatibility findings. Designed to be dropped into host pages for quick triage of H5 issues.
+Lightweight, embeddable diagnostics (now authored in TypeScript with exported types) that reveal browser hardware hints, API availability, and compatibility findings. Designed to be dropped into host pages for quick triage of H5 issues.
 
 ## Quick start
 
-```js
-import { createProbe } from './src/index.js';
+```ts
+import { createProbe } from './src/index';
 
 const probe = createProbe({
   enableBenchmarks: true,
@@ -18,6 +18,8 @@ const probe = createProbe({
 const result = await probe.run();
 probe.render('#probe-panel');
 ```
+
+Type definitions ship with the source: import `ProbeConfig`, `ProbeResult`, or `Snapshot` if you want typed host-side handling. Run `npm run typecheck` to validate the codebase without emitting JS.
 
 Extend detection with custom feature checks:
 
@@ -45,6 +47,17 @@ Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe
 </script>
 ```
 
+### Development server with live reload
+
+Use `npm run dev` to start a local server with Rollup watch + live reload so you can see probe changes immediately while adding new detectors:
+
+```bash
+npm install
+npm run dev
+```
+
+The dev server serves `dist/index.html` at `http://localhost:4173` and rebuilds the bundle when source files change.
+
 ## Features
 - Hardware, HTML/CSS, and API capability detection with safe fallbacks
 - Optional micro-benchmark to gauge runtime budgets
@@ -53,11 +66,12 @@ Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe
 - Embeddable widget plus hook-based integrations for logging or analytics
 
 ## Module map
-- `src/loader.js`: bootstrap and orchestrates collection + reporting
+- `src/loader.ts`: bootstrap and orchestrates collection + reporting
 - `src/collectors/`: capability collectors (hardware, HTML, CSS, API surface)
 - `src/benchmarks/`: opt-in micro benchmarks
-- `src/sanitizer.js`: normalization and redaction
+- `src/sanitizer.ts`: normalization and redaction
 - `src/compatibility/`: rules engine and definitions
-- `src/ui/widget.js`: minimal embeddable summary UI
-- `src/integrations/hooks.js`: subscription bus for host callbacks
-- `src/runtime-utils/env.js`: environment guards and helpers
+- `src/ui/widget.ts`: minimal embeddable summary UI
+- `src/integrations/hooks.ts`: subscription bus for host callbacks
+- `src/runtime-utils/env.ts`: environment guards and helpers
+- `src/types.ts`: shared TypeScript interfaces exported for host consumption
