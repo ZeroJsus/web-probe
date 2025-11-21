@@ -1,0 +1,44 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - master  # 监听 master 分支的推送事件
+
+# 设置权限以确保 actions 可以获取代码
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 虚拟机作为构建环境
+
+    steps:
+      # 步骤 1: 检出代码
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # 步骤 2: (如果需要) 设置 Node.js 环境 - 适用于前端项目
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # 替换为您的项目所需的版本
+
+      # 步骤 3: 安装依赖和构建 (根据您的项目类型取消注释和修改)
+      - name: Install Dependencies
+        run: npm install # 或 yarn install
+
+      - name: Build Project
+        run: npm run build # 替换为您的实际构建命令
+
+      # 步骤 4: 部署到 Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }} # 使用上面设置的 Secret
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} # 如果需要，也请设置为 Secret
+          projectName: web-probd # 替换为在 Cloudflare Pages 上创建的项目名称
+          directory: ./dist # 替换为您的项目构建产物目录 (例如: build, dist, public)
+          # command: npm run build # 如果没有在前面单独构建，也可以在这里指定构建命令
