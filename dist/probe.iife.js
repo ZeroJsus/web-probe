@@ -232,8 +232,18 @@
 
   function supportsCss(style, property, value) {
     if (typeof property === 'string' && property.trim().charAt(0) === '(') {
-      var mq = safeGet(function () { return typeof matchMedia === 'function' && matchMedia(property.trim()); }, null);
-      return Boolean(mq && mq.media !== 'not all');
+      var query = property.trim();
+      var mq = safeGet(function () { return typeof matchMedia === 'function' ? matchMedia(query) : null; }, null);
+
+      if (!mq) return false;
+
+      var directSupport = mq.media === query && mq.media !== 'not all';
+      if (directSupport) return true;
+
+      var negated = safeGet(function () { return typeof matchMedia === 'function' ? matchMedia("not all and " + query) : null; }, null);
+      var negatedSupported = Boolean(negated && negated.media !== 'not all');
+
+      return negatedSupported || mq.media !== 'not all' && mq.media.length > 0;
     }
 
     var supportsApi = safeGet(function () { return global.CSS && typeof CSS.supports === 'function'; }, false);

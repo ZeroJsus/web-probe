@@ -31,11 +31,24 @@ const supportsCss = (
   value?: string
 ): boolean => {
   if (typeof property === 'string' && property.trim().startsWith('(')) {
+    const query = property.trim();
     const mq = safeGet(
-      () => typeof matchMedia === 'function' && matchMedia(property.trim()),
+      () => (typeof matchMedia === 'function' ? matchMedia(query) : null),
       null
     );
-    return Boolean(mq && mq.media !== 'not all');
+
+    if (!mq) return false;
+
+    const directSupport = mq.media === query && mq.media !== 'not all';
+    if (directSupport) return true;
+
+    const negated = safeGet(
+      () => (typeof matchMedia === 'function' ? matchMedia(`not all and ${query}`) : null),
+      null
+    );
+    const negatedSupported = Boolean(negated && negated.media !== 'not all');
+
+    return negatedSupported || (mq.media !== 'not all' && mq.media.length > 0);
   }
 
   const supportsApi = safeGet(() => globalThis.CSS && typeof CSS.supports === 'function', false);
