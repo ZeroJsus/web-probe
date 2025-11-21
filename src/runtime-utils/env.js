@@ -10,6 +10,7 @@ const safeGet = (getter, fallback = undefined) => {
 };
 
 const coerceNumber = (value, fallback = 0) => {
+  if (value === null || value === undefined) return fallback;
   const coerced = Number(value);
   return Number.isFinite(coerced) ? coerced : fallback;
 };

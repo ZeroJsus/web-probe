@@ -16,6 +16,7 @@
   }
 
   function coerceNumber(value, fallback) {
+    if (value === null || value === undefined) return fallback;
     var coerced = Number(value);
     return isFinite(coerced) ? coerced : fallback;
   }
@@ -50,8 +51,8 @@
     var nav = window.navigator || {};
 
     return {
-      deviceMemory: coerceNumber(safeGet(function () { return nav.deviceMemory; }, null), null),
-      hardwareConcurrency: coerceNumber(safeGet(function () { return nav.hardwareConcurrency; }, null), null),
+      deviceMemory: coerceNumber(safeGet(function () { return nav.deviceMemory; }), null),
+      hardwareConcurrency: coerceNumber(safeGet(function () { return nav.hardwareConcurrency; }), null),
       userAgent: safeGet(function () {
         return nav.userAgentData ? nav.userAgentData.brands : nav.userAgent;
       }, null),
@@ -248,6 +249,11 @@
   }
 
   // UI -----------------------------------------------------------------
+  function displayValue(value, fallback) {
+    if (fallback === void 0) fallback = 'n/a';
+    return value === null || value === undefined ? fallback : value;
+  }
+
   function buildList(items) {
     var list = document.createElement('ul');
     list.style.margin = '0';
@@ -300,10 +306,10 @@
     hardwareBlock.appendChild(hardwareTitle);
     hardwareBlock.appendChild(
       buildList([
-        'Memory: ' + safeGet(function () { return hardware.deviceMemory; }, 'n/a') + ' GB',
-        'Cores: ' + safeGet(function () { return hardware.hardwareConcurrency; }, 'n/a'),
-        'Platform: ' + safeGet(function () { return hardware.platform; }, 'n/a'),
-        'Language: ' + safeGet(function () { return hardware.language; }, 'n/a')
+        'Memory: ' + displayValue(safeGet(function () { return hardware.deviceMemory; }, null)) + ' GB',
+        'Cores: ' + displayValue(safeGet(function () { return hardware.hardwareConcurrency; }, null)),
+        'Platform: ' + displayValue(safeGet(function () { return hardware.platform; }, null)),
+        'Language: ' + displayValue(safeGet(function () { return hardware.language; }, null))
       ])
     );
     container.appendChild(hardwareBlock);

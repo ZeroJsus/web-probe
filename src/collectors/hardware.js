@@ -16,8 +16,8 @@ const collectHardware = () => {
   const nav = window.navigator || {};
 
   return {
-    deviceMemory: coerceNumber(safeGet(() => nav.deviceMemory, null), null),
-    hardwareConcurrency: coerceNumber(safeGet(() => nav.hardwareConcurrency, null), null),
+    deviceMemory: coerceNumber(safeGet(() => nav.deviceMemory), null),
+    hardwareConcurrency: coerceNumber(safeGet(() => nav.hardwareConcurrency), null),
     userAgent: safeGet(() => (nav.userAgentData ? nav.userAgentData.brands : nav.userAgent), null),
     language: safeGet(() => nav.language || (nav.languages || [])[0], null),
     platform: safeGet(() => nav.platform || nav.userAgentData?.platform, null)

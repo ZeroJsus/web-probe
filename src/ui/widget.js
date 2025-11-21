@@ -1,5 +1,9 @@
 import { isBrowser, safeGet } from '../runtime-utils/env.js';
 
+const displayValue = (value, fallback = 'n/a') => {
+  return value === null || value === undefined ? fallback : value;
+};
+
 const buildList = (items) => {
   const list = document.createElement('ul');
   list.style.margin = '0';
@@ -53,10 +57,10 @@ const renderWidget = (result, options = {}) => {
   hardwareBlock.appendChild(hardwareTitle);
   hardwareBlock.appendChild(
     buildList([
-      `Memory: ${safeGet(() => hardware.deviceMemory, 'n/a')} GB`,
-      `Cores: ${safeGet(() => hardware.hardwareConcurrency, 'n/a')}`,
-      `Platform: ${safeGet(() => hardware.platform, 'n/a')}`,
-      `Language: ${safeGet(() => hardware.language, 'n/a')}`
+      `Memory: ${displayValue(safeGet(() => hardware.deviceMemory, null))} GB`,
+      `Cores: ${displayValue(safeGet(() => hardware.hardwareConcurrency, null))}`,
+      `Platform: ${displayValue(safeGet(() => hardware.platform, null))}`,
+      `Language: ${displayValue(safeGet(() => hardware.language, null))}`
     ])
   );
   container.appendChild(hardwareBlock);
