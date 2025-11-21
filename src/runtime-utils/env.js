@@ -14,18 +14,17 @@ const coerceNumber = (value, fallback = 0) => {
   return Number.isFinite(coerced) ? coerced : fallback;
 };
 
-const withTimeout = async (promise, timeoutMs) => {
+const withTimeout = (promise, timeoutMs) => {
   if (!timeoutMs || timeoutMs <= 0) return promise;
+
   let timeoutHandle;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutHandle = setTimeout(() => reject(new Error('probe-timeout')), timeoutMs);
   });
-  try {
-    const result = await Promise.race([promise, timeoutPromise]);
-    return result;
-  } finally {
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
     clearTimeout(timeoutHandle);
-  }
+  });
 };
 
 export { isBrowser, safeGet, coerceNumber, withTimeout };

@@ -24,21 +24,24 @@ const createProbe = (userConfig = {}) => {
 
   // Run the probe once to collect environment data and compatibility findings.
   // 执行一次探针，采集环境数据并生成兼容性结论。
-  const collect = async () => {
+  const collect = () => {
     const hardware = collectHardware();
     const apiSupport = collectApiSupport(config.customApis);
-    const benchmarks = config.enableBenchmarks
-      ? { micro: await runMicroBenchmarks(config.benchmarkOptions) }
-      : undefined;
 
-    const snapshot = sanitizeSnapshot({ hardware, apiSupport, benchmarks });
-    bus.emit('snapshot', snapshot);
+    const benchmarksPromise = config.enableBenchmarks
+      ? runMicroBenchmarks(config.benchmarkOptions)
+      : Promise.resolve(undefined);
 
-    const report = evaluateCompatibility(snapshot, config.ruleOverrides);
-    const result = { snapshot, report };
-    lastResult = result;
-    bus.emit('result', result);
-    return result;
+    return Promise.resolve(benchmarksPromise).then((benchmarks) => {
+      const snapshot = sanitizeSnapshot({ hardware, apiSupport, benchmarks });
+      bus.emit('snapshot', snapshot);
+
+      const report = evaluateCompatibility(snapshot, config.ruleOverrides);
+      const result = { snapshot, report };
+      lastResult = result;
+      bus.emit('result', result);
+      return result;
+    });
   };
 
   // Render the embeddable UI widget with the last collected result.

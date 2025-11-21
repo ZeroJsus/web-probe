@@ -2,7 +2,7 @@ import { isBrowser, safeGet, withTimeout } from '../runtime-utils/env.js';
 
 // Performs a lightweight math loop to approximate CPU responsiveness.
 // 执行轻量级数学循环，用于近似 CPU 响应能力。
-const runMicroBenchmarks = async ({ iterations = 5000, timeoutMs = 25 } = {}) => {
+const runMicroBenchmarks = ({ iterations = 5000, timeoutMs = 25 } = {}) => {
   if (!isBrowser()) return null;
 
   const perfNow = safeGet(() => performance.now.bind(performance), null);
