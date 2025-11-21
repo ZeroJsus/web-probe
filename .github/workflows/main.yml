@@ -25,7 +25,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm' # 启用缓存，加速依赖安装
+          # 没有 yarn.lock 等缓存文件 不需要有这个设置
+          # cache: 'npm' # 启用缓存，加速依赖安装
           
       # 3. 安装依赖
       - name: 📦 Install dependencies
