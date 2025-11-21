@@ -1,0 +1,58 @@
+name: Rollup Frontend CI/CD to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main  # 仅在代码推送到 master 分支时触发
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    
+    # 环境变量：定义构建产物目录和 Node 版本
+    env:
+      NODE_VERSION: '18' # 建议使用最新的 LTS 版本
+      BUILD_OUTPUT_DIR: 'dist' # 请根据您的 rollup.config.js 确认
+      CF_PROJECT_NAME: 'web-probe' # 替换为在 Cloudflare Pages 上创建的项目名
+
+    steps:
+      # 1. 检出代码
+      - name: ⚙️ Checkout repository
+        uses: actions/checkout@v4
+        
+      # 2. 设置 Node.js 环境
+      - name: 🟢 Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm' # 启用缓存，加速依赖安装
+          
+      # 3. 安装依赖
+      - name: 📦 Install dependencies
+        run: npm install
+
+      # 4. Rollup 构建
+      - name: 🔨 Build with Rollup
+        run: npm run build
+
+        # 步骤 4.5: 运行测试
+      - name: 🧪 Run Tests (Jest/Vitest/Mocha)
+        run: npm test # 确保您的 package.json 中有测试脚本
+        
+      # 5. (可选) 部署前检查 - 确保构建产物存在
+      - name: 👀 Verify Build Artifacts
+        run: |
+          if [ ! -d ${{ env.BUILD_OUTPUT_DIR }} ]; then
+            echo "Error: Build output directory (${{ env.BUILD_OUTPUT_DIR }}) not found after build."
+            exit 1
+          fi
+          
+      # 6. 部署到 Cloudflare Pages
+      - name: 🚀 Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} # 非必需，但推荐设置
+          projectName: ${{ env.CF_PROJECT_NAME }}
+          directory: ${{ env.BUILD_OUTPUT_DIR }} # 使用前面定义的环境变量
+          # 部署操作不应该再次执行构建命令，因为我们已经在步骤 4 中完成了。
