@@ -35,6 +35,8 @@ const probe = createProbe({
 });
 ```
 
+Built-in CSS detectors now cover `aspect-ratio` alongside grid, flex, backdrop-filter, sticky positioning, container queries, and prefers-reduced-motion so ratio-driven layouts are surfaced automatically.
+
 ### Legacy-friendly bundle
 
 Run `npm run build` to emit `dist/probe.iife.js`, which exposes `window.WebProbe.createProbe` for browsers without module support:
