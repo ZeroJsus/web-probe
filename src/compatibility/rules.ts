@@ -10,7 +10,7 @@ interface Rule {
   check: (snapshot: Snapshot) => boolean;
 }
 
-const RULE_VERSION = '1.1.0';
+const RULE_VERSION = '1.2.0';
 
 const rules: Rule[] = [
   {
@@ -48,6 +48,15 @@ const rules: Rule[] = [
       zh: '缺少 HTML template 元素，前端模板渲染可能异常。'
     },
     check: (snapshot) => snapshot.htmlSupport && snapshot.htmlSupport.template === false
+  },
+  {
+    id: 'missing-aspect-ratio',
+    severity: 'warn',
+    message: {
+      en: 'CSS aspect-ratio not supported; responsive components may render incorrectly.',
+      zh: '不支持 CSS aspect-ratio，依赖比例的响应式组件可能渲染异常。'
+    },
+    check: (snapshot) => snapshot.cssSupport && snapshot.cssSupport['aspect-ratio'] === false
   },
   {
     id: 'missing-css-grid',

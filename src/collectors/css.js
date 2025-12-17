@@ -3,6 +3,7 @@ import { isBrowser, safeGet } from '../runtime-utils/env.js';
 const DEFAULT_CSS_FEATURES = [
   { name: 'css-grid', property: 'display', value: 'grid' },
   { name: 'css-flex', property: 'display', value: 'flex' },
+  { name: 'aspect-ratio', property: 'aspect-ratio', value: '1 / 1' },
   { name: 'backdrop-filter', property: 'backdrop-filter', value: 'blur(2px)' },
   { name: 'position-sticky', property: 'position', value: 'sticky' },
   { name: 'container-queries', property: 'container-type', value: 'inline-size' },
