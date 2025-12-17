@@ -13,6 +13,17 @@
     .notice { font-size: 14px; color: #334155; margin-bottom: 8px; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 6px; }
     .fallback { color: #b91c1c; font-weight: 600; }
+    /* Lightweight skeleton shown while probe data is collected to unblock LCP */
+    .probe-skeleton { display: grid; gap: 8px; padding: 12px; border: 1px solid #d0d7de; border-radius: 8px; background: #f8fafc; max-width: 360px; }
+    .probe-skeleton .bar { height: 10px; border-radius: 999px; position: relative; overflow: hidden; background: #e2e8f0; }
+    .probe-skeleton .bar.wide { width: 80%; height: 12px; }
+    .probe-skeleton .bar.medium { width: 65%; }
+    .probe-skeleton .bar.short { width: 45%; }
+    .probe-skeleton .bar::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(120deg, transparent 0%, rgba(148, 163, 184, 0.5) 50%, transparent 100%); animation: shimmer 1s ease-in-out infinite; }
+    .probe-skeleton .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .probe-skeleton .pill { height: 16px; border-radius: 999px; background: #e2e8f0; position: relative; overflow: hidden; min-width: 72px; }
+    .probe-skeleton .pill::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(120deg, transparent 0%, rgba(148, 163, 184, 0.5) 50%, transparent 100%); animation: shimmer 1s ease-in-out infinite; }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
   </style>
 </head>
 <body>
@@ -26,7 +37,23 @@
         Probe status will appear below. The widget renders after collection completes.<br />
         探针状态将显示在下方，数据采集完成后自动渲染组件。
       </div>
-      <div id="probe-mount"></div>
+      <div id="probe-mount">
+        <div id="probe-placeholder" class="probe-skeleton" aria-hidden="true">
+          <div class="bar wide"></div>
+          <div class="row">
+            <div class="pill" style="width: 110px;"></div>
+            <div class="pill" style="width: 84px;"></div>
+            <div class="pill" style="width: 96px;"></div>
+          </div>
+          <div class="bar medium"></div>
+          <div class="row">
+            <div class="pill" style="width: 120px;"></div>
+            <div class="pill short" style="width: 72px;"></div>
+            <div class="pill" style="width: 88px;"></div>
+          </div>
+          <div class="bar short"></div>
+        </div>
+      </div>
     </div>
     <div class="panel">
       <div class="notice">
@@ -39,30 +66,42 @@
     </div>
   </main>
 
-  <script src="./probe.iife.js"></script>
+  <!-- Defer the bundle so HTML can paint before JS finishes -->
+  <script src="./probe.iife.js" defer></script>
   <script>
-    (function () {
+    // Wait for DOM ready to avoid early fallback before WebProbe is available.
+    window.addEventListener('DOMContentLoaded', function () {
       var fallback = document.getElementById('fallback');
       var mount = document.getElementById('probe-mount');
+      var placeholder = document.getElementById('probe-placeholder');
+      var clearPlaceholder = function () {
+        if (placeholder && placeholder.parentNode) {
+          placeholder.parentNode.removeChild(placeholder);
+        }
+      };
 
       if (!window.WebProbe || typeof window.WebProbe.createProbe !== 'function') {
         fallback.hidden = false;
+        clearPlaceholder();
         return;
       }
 
       try {
         var probe = window.WebProbe.createProbe({ enableBenchmarks: true, theme: 'light' });
         probe.run().then(function () {
+          clearPlaceholder();
           probe.render(mount);
         }).catch(function (error) {
+          clearPlaceholder();
           fallback.hidden = false;
           fallback.textContent = 'Probe failed: ' + (error && error.message ? error.message : error);
         });
       } catch (error) {
+        clearPlaceholder();
         fallback.hidden = false;
         fallback.textContent = 'Probe failed: ' + (error && error.message ? error.message : error);
       }
-    })();
+    });
   </script>
 </body>
 </html>

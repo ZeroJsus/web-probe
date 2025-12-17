@@ -52,34 +52,71 @@ const supportsCss = (
     return negatedSupported || (mq.media !== 'not all' && mq.media.length > 0);
   }
 
+  const supportsByStyleMutation = (testProperty: string, testValue: string) => {
+    if (!style) return undefined;
+
+    // Avoid `style[property] = value` because CSSStyleDeclaration may accept arbitrary expando
+    // properties (e.g. `style['aspect-ratio']`) and produce false positives.
+    const previousValue = style.getPropertyValue(testProperty);
+    const previousPriority = style.getPropertyPriority(testProperty);
+    try {
+      style.setProperty(testProperty, testValue);
+      return style.getPropertyValue(testProperty) !== '';
+    } catch (err) {
+      return false;
+    } finally {
+      style.removeProperty(testProperty);
+      if (previousValue) style.setProperty(testProperty, previousValue, previousPriority);
+    }
+  };
+
   const supportsApi = safeGet(() => globalThis.CSS && typeof CSS.supports === 'function', false);
   if (supportsApi) {
-    if (value === undefined) return CSS.supports(property);
-    return CSS.supports(property, value);
-  }
+    if (!property) return false;
 
-  if (!style) return false;
-  if (value === undefined) return property ? property in style : false;
+    const trySupports = (...args: unknown[]) => {
+      try {
+        return (CSS.supports as (...params: unknown[]) => boolean)(...args);
+      } catch (err) {
+        return undefined;
+      }
+    };
+
+    // Prefer the declaration form because it matches `@supports(...)` behavior more closely.
+    if (value !== undefined) {
+      const declarationResult = trySupports(`${property}: ${value}`);
+      if (declarationResult !== undefined) {
+        if (!declarationResult) return false;
+        const mutation = supportsByStyleMutation(property, value);
+        return mutation === undefined ? declarationResult : mutation;
+      }
+
+      const pairResult = trySupports(property, value);
+      if (pairResult !== undefined) {
+        if (!pairResult) return false;
+        const mutation = supportsByStyleMutation(property, value);
+        return mutation === undefined ? pairResult : mutation;
+      }
+
+      return false;
+    }
+
+    const propertyResult = trySupports(property);
+    if (!propertyResult) return false;
+    const mutation = supportsByStyleMutation(property, 'initial');
+    return mutation === undefined ? Boolean(propertyResult) : mutation;
+  }
 
   if (!property) return false;
-
-  const styleRecord = style as Record<string, unknown>;
-  const previous = styleRecord[property];
-  try {
-    styleRecord[property] = value;
-    return styleRecord[property] === value;
-  } catch (err) {
-    return false;
-  } finally {
-    styleRecord[property] = previous;
-  }
+  const mutation = supportsByStyleMutation(property, value === undefined ? 'initial' : value);
+  return Boolean(mutation);
 };
 
 // Collects CSS feature support with optional custom checks.
 // 采集 CSS 特性支持情况，并允许外部自定义检测项。
 const collectCssSupport = (customFeatures: Array<string | CssFeature> = []) => {
   if (!isBrowser()) return {};
-  const style = safeGet(() => document.documentElement && document.documentElement.style, null);
+  const style = safeGet(() => document.createElement('div').style, null) as CSSStyleDeclaration | null;
   const normalizedDefaults = DEFAULT_CSS_FEATURES.map(normalizeFeature).filter(Boolean) as Array<{
     name: string;
     property?: string;

@@ -35,7 +35,7 @@ const probe = createProbe({
 });
 ```
 
-Built-in CSS detectors now cover `aspect-ratio` alongside grid, flex, backdrop-filter, sticky positioning, container queries, and prefers-reduced-motion so ratio-driven layouts are surfaced automatically.
+Built-in CSS detectors now cover `aspect-ratio` alongside grid, flex, backdrop-filter, sticky positioning, container queries, and prefers-reduced-motion so ratio-driven layouts are surfaced automatically. The probe prefers `CSS.supports('prop: value')` semantics (and validates via `style.setProperty`) to stay aligned with `@supports(...)` and avoid false positives in older WebViews.
 
 ### Legacy-friendly bundle
 
