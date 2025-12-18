@@ -32,7 +32,7 @@ const createProbe = (userConfig = {}) => {
     const hardware = collectHardware();
     const apiSupport = collectApiSupport(config.customApis);
     const htmlSupport = collectHtmlSupport(config.customHtmlFeatures);
-    const cssSupport = collectCssSupport(config.customCssFeatures);
+    const css = collectCssSupport(config.customCssFeatures);
 
     const benchmarksPromise = config.enableBenchmarks
       ? runMicroBenchmarks(config.benchmarkOptions)
@@ -43,7 +43,8 @@ const createProbe = (userConfig = {}) => {
         hardware,
         apiSupport,
         htmlSupport,
-        cssSupport,
+        cssSupport: css.support,
+        cssSupportDebug: css.debug,
         benchmarks
       });
       bus.emit('snapshot', snapshot);

@@ -88,7 +88,12 @@
 
       try {
         var probe = window.WebProbe.createProbe({ enableBenchmarks: true, theme: 'light' });
-        probe.run().then(function () {
+        probe.run().then(function (result) {
+          // Log CSS support (with aspect-ratio debug) to the console for inspection.
+          if (result && result.snapshot) {
+            console.log('[WebProbe] cssSupport:', result.snapshot.cssSupport);
+            console.log('[WebProbe] cssSupportDebug:', result.snapshot.cssSupportDebug);
+          }
           clearPlaceholder();
           probe.render(mount);
         }).catch(function (error) {

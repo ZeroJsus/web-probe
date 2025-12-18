@@ -1,3 +1,5 @@
+
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 var WebProbe = (function (exports) {
   'use strict';
 
@@ -249,6 +251,55 @@ var WebProbe = (function (exports) {
     }
     return null;
   };
+  const supportsAspectRatioBehavioral = () => {
+    if (!isBrowser()) return {
+      supported: false,
+      squareHeight: null,
+      wideHeight: null
+    };
+    const doc = safeGet(() => document, null);
+    if (!doc) return {
+      supported: false,
+      squareHeight: null,
+      wideHeight: null
+    };
+    const root = doc.body || doc.documentElement;
+    if (!root) return {
+      supported: false,
+      squareHeight: null,
+      wideHeight: null
+    };
+    const wrapper = doc.createElement('div');
+    wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;z-index:-1;overflow:hidden;';
+    const square = doc.createElement('div');
+    square.style.cssText = 'display:block;width:120px;height:auto;margin:0;padding:0;border:0;box-sizing:content-box;aspect-ratio:1/1;';
+    const wide = doc.createElement('div');
+    wide.style.cssText = 'display:block;width:120px;height:auto;margin:0;padding:0;border:0;box-sizing:content-box;aspect-ratio:2/1;';
+    wrapper.appendChild(square);
+    wrapper.appendChild(wide);
+    try {
+      root.appendChild(wrapper);
+      const squareHeight = square.getBoundingClientRect().height;
+      const wideHeight = wide.getBoundingClientRect().height;
+      const squareOk = squareHeight > 0 && Math.abs(squareHeight - 120) <= 2;
+      const wideOk = wideHeight > 0 && Math.abs(wideHeight - 60) <= 2;
+      return {
+        supported: squareOk && wideOk,
+        squareHeight,
+        wideHeight
+      };
+    } catch (err) {
+      return {
+        supported: false,
+        squareHeight: null,
+        wideHeight: null
+      };
+    } finally {
+      try {
+        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+      } catch (cleanupErr) {}
+    }
+  };
   const supportsCss = (style, property, value) => {
     if (typeof property === 'string' && property.trim().startsWith('(')) {
       const query = property.trim();
@@ -309,16 +360,35 @@ var WebProbe = (function (exports) {
     return Boolean(mutation);
   };
   const collectCssSupport = (customFeatures = []) => {
-    if (!isBrowser()) return {};
+    if (!isBrowser()) return {
+      support: {},
+      debug: {}
+    };
     const style = safeGet(() => document.createElement('div').style, null);
     const normalizedDefaults = DEFAULT_CSS_FEATURES.map(normalizeFeature).filter(Boolean);
     const normalizedCustom = (customFeatures || []).map(normalizeFeature).filter(Boolean);
     const features = [...normalizedDefaults, ...normalizedCustom];
     const support = {};
+    const debug = {};
     features.forEach(feature => {
-      support[feature.name] = Boolean(supportsCss(style, feature.property, feature.value));
+      const syntacticSupport = Boolean(supportsCss(style, feature.property, feature.value));
+      if (feature.property === 'aspect-ratio' || feature.name === 'aspect-ratio') {
+        const behavior = supportsAspectRatioBehavioral();
+        support[feature.name] = syntacticSupport && behavior.supported;
+        debug[feature.name] = {
+          syntactic: syntacticSupport,
+          behavioral: behavior.supported,
+          squareHeight: behavior.squareHeight,
+          wideHeight: behavior.wideHeight
+        };
+        return;
+      }
+      support[feature.name] = syntacticSupport;
     });
-    return support;
+    return {
+      support,
+      debug
+    };
   };
 
   const runMicroBenchmarks = ({
@@ -569,14 +639,15 @@ var WebProbe = (function (exports) {
       const hardware = collectHardware();
       const apiSupport = collectApiSupport(config.customApis);
       const htmlSupport = collectHtmlSupport(config.customHtmlFeatures);
-      const cssSupport = collectCssSupport(config.customCssFeatures);
+      const css = collectCssSupport(config.customCssFeatures);
       const benchmarksPromise = config.enableBenchmarks ? runMicroBenchmarks(config.benchmarkOptions) : Promise.resolve(undefined);
       return Promise.resolve(benchmarksPromise).then(benchmarks => {
         const snapshot = sanitizeSnapshot({
           hardware,
           apiSupport,
           htmlSupport,
-          cssSupport,
+          cssSupport: css.support,
+          cssSupportDebug: css.debug,
           benchmarks: benchmarks ? {
             micro: benchmarks
           } : undefined

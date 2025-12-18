@@ -41,6 +41,7 @@ export interface Snapshot {
   apiSupport: Record<string, boolean>;
   htmlSupport: Record<string, boolean>;
   cssSupport: Record<string, boolean>;
+  cssSupportDebug?: Record<string, unknown>;
   benchmarks?: BenchmarksSnapshot | null;
 }
 
